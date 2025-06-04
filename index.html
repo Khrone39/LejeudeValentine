@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>J'ai déjà / Je n'ai jamais - Multi-joueurs</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #dfe9f3, #ffffff);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin-top: 30px;
+      color: #2c3e50;
+    }
+
+    .card, .setup {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      width: 90%;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .phrase {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: #34495e;
+    }
+
+    .players {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .player {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 15px;
+      width: 180px;
+      background-color: #f9f9f9;
+    }
+
+    .player h3 {
+      margin: 10px 0;
+      font-size: 1.1em;
+      color: #2c3e50;
+    }
+
+    .score {
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .already {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    .already:hover {
+      background-color: #219150;
+    }
+
+    .never {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .never:hover {
+      background-color: #c0392b;
+    }
+
+    .next {
+      background-color: #2980b9;
+      color: white;
+      margin-top: 30px;
+    }
+
+    .next:hover {
+      background-color: #2471a3;
+    }
+
+    select, input[type="text"], .start-btn {
+      padding: 10px;
+      font-size: 1em;
+      margin: 10px 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .name-input {
+      display: block;
+      margin: 10px auto;
+      width: 80%;
+    }
+
+    .classement-container {
+      margin-top: 40px;
+      background: #fef9f1;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .classement-container h2 {
+      color: #d35400;
+      margin-bottom: 20px;
+    }
+
+    .classement-container ol {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .classement-container li {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 12px 20px;
+      margin: 10px 0;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .classement-container li span.rank {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .classement-container li span.score {
+      font-weight: bold;
+      color: #c0392b;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>J'ai déjà / Je n'ai jamais</h1>
+
+  <!-- Écran de démarrage -->
+  <div class="setup" id="setup">
+    <label for="numPlayers">Nombre de joueurs :</label>
+    <select id="numPlayers" onchange="generateNameInputs()">
+      <option value="2">2 joueurs</option>
+      <option value="3">3 joueurs</option>
+      <option value="4">4 joueurs</option>
+      <option value="5">5 joueurs</option>
+      <option value="6">6 joueurs</option>
+      <option value="7">7 joueurs</option>
+      <option value="8">8 joueurs</option>
+    </select>
+
+    <div id="nameInputs"></div>
+
+    <label for="numQuestions">Nombre de phrases pour cette manche :</label>
+    <select id="numQuestions">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+    </select>
+
+    <button class="start-btn" onclick="startGame()">Commencer</button>
+  </div>
+
+  <!-- Jeu principal -->
+  <div class="card" id="game" style="display:none;">
+    <div class="phrase" id="phrase">Cliquez sur "Suivant" pour commencer !</div>
+    <div class="players" id="playersContainer"></div>
+    <button class="next" onclick="newPhrase()">Suivant</button>
+  </div>
+
+  <!-- Classement final -->
+  <div class="card classement-container" id="classement" style="display:none;">
+    <h2>Classement du gros dégueulasse</h2>
+    <ol id="classementList"></ol>
+  </div>
+
+  <script>
+    const allPhrases = [
+      "Mentir à mes parents", "Dormir en cours", "Manger quelque chose tombé par terre",
+      "Envoyer un message à la mauvaise personne", "Faire une nuit blanche",
+      "Me faire passer pour quelqu'un d'autre", "Aller à un concert",
+      "Parler à quelqu'un sans le connaître", "Regarder une série en une seule journée",
+      "Tricher à un examen", "Faire pipi dans une piscine", "Faire semblant d’être malade",
+      "Voler un bonbon", "Regarder un film interdit", "Avoir un fou rire au mauvais moment",
+      "Oublier l'anniversaire d’un proche", "Mentir pour éviter une corvée",
+      "Tomber devant du monde", "Me réveiller sans savoir où je suis",
+      "Aller en boîte de nuit", "Utiliser une excuse bidon pour partir",
+      "Faire semblant d’envoyer un SMS pour éviter quelqu’un",
+      "Me disputer sur les réseaux", "Partager une vidéo gênante",
+      "Trier les bonbons pour ne manger que mes préférés",
+      "Faire du karaoké complètement faux", "Être en pyjama toute une journée",
+      "Cacher des chips dans ma chambre", "Chanter sous la douche comme une star",
+      "Dire 'je suis à 5 minutes' alors que je suis encore chez moi",
+      "Supprimer un message pour éviter un malaise"
+    ];
+
+    let numPlayers = 2;
+    let scores = [];
+    let playerNames = [];
+    let availablePhrases = [];
+    let roundTotal = 10;
+    let currentPhraseIndex = 0;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function generateNameInputs() {
+      numPlayers = parseInt(document.getElementById("numPlayers").value);
+      const container = document.getElementById("nameInputs");
+      container.innerHTML = "";
+
+      for (let i = 0; i < numPlayers; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "name-input";
+        input.placeholder = `Nom du joueur ${i + 1}`;
+        input.id = `playerName${i}`;
+        container.appendChild(input);
+      }
+    }
+
+    function startGame() {
+      playerNames = [];
+      scores = [];
+      currentPhraseIndex = 0;
+
+      roundTotal = parseInt(document.getElementById("numQuestions").value);
+
+      for (let i = 0; i < numPlayers; i++) {
+        const nameInput = document.getElementById(`playerName${i}`);
+        const name = nameInput?.value.trim() || `Joueur ${i + 1}`;
+        playerNames.push(name);
+        scores.push(0);
+      }
+
+      availablePhrases = shuffle([...allPhrases]).slice(0, roundTotal);
+
+      const playersContainer = document.getElementById("playersContainer");
+      playersContainer.innerHTML = "";
+
+      for (let i = 0; i < numPlayers; i++) {
+        const playerDiv = document.createElement("div");
+        playerDiv.className = "player";
+        playerDiv.innerHTML = `
+          <h3>${playerNames[i]}</h3>
+          <button class="already" onclick="vote(${i}, true)">J'ai déjà</button>
+          <button class="never" onclick="vote(${i}, false)">Je n'ai jamais</button>
+          <div class="score" id="score${i}">Score : 0</div>
+        `;
+        playersContainer.appendChild(playerDiv);
+      }
+
+      document.getElementById("setup").style.display = "none";
+      document.getElementById("game").style.display = "block";
+      document.getElementById("classement").style.display = "none";
+      newPhrase();
+    }
+
+    function newPhrase() {
+      if (currentPhraseIndex >= availablePhrases.length) {
+        showClassement();
+        return;
+      }
+
+      document.getElementById("phrase").innerText = availablePhrases[currentPhraseIndex];
+      currentPhraseIndex++;
+    }
+
+    function vote(playerIndex, hasDone) {
+      if (hasDone) {
+        scores[playerIndex]++;
+        document.getElementById("score" + playerIndex).innerText = "Score : " + scores[playerIndex];
+      }
+    }
+
+    function showClassement() {
+      document.getElementById("game").style.display = "none";
+      document.getElementById("classement").style.display = "block";
+
+      const classementList = document.getElementById("classementList");
+      classementList.innerHTML = "";
+
+      const classement = playerNames
+        .map((name, i) => ({ name, score: scores[i] }))
+        .sort((a, b) => b.score - a.score);
+
+      classement.forEach((player, index) => {
+        const li = document.createElement("li");
+        let medal = "";
+        if (index === 0) medal = "🥇";
+        else if (index === 1) medal = "🥈";
+        else if (index === 2) medal = "🥉";
+        li.innerHTML = `<span class="rank">${index + 1}. ${medal} ${player.name}</span><span class="score">${player.score} pts</span>`;
+        classementList.appendChild(li);
+      });
+    }
+
+    window.onload = generateNameInputs;
+  </script>
+</body>
+</html>
