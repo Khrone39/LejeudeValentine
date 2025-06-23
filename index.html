@@ -289,10 +289,16 @@
     }
 
     function newPhrase() {
-      if (currentPhraseIndex >= availablePhrases.length) {
-        showClassement();
-        return;
-      }
+  window.scrollTo(0, 0); // <-- Cette ligne force la remontée en haut de la page
+
+  if (currentPhraseIndex >= availablePhrases.length) {
+    showClassement();
+    return;
+  }
+
+  document.getElementById("phrase").innerText = availablePhrases[currentPhraseIndex];
+  currentPhraseIndex++;
+}
 
       document.getElementById("phrase").innerText = availablePhrases[currentPhraseIndex];
       currentPhraseIndex++;
